@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BMW CarData Telematik &amp; Stream Dashboard</title>
+  <style>
+    :root {
+      --bg: #0b0f17;
+      --panel: #121826;
+      --panel-2: #182032;
+      --border: #263147;
+      --text: #e8eef9;
+      --muted: #8b9bb4;
+      --accent: #1c69d4;
+      --accent-glow: #3b82f6;
+      --ok: #22c55e;
+      --warn: #f59e0b;
+      --danger: #ef4444;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif;
+      background: radial-gradient(circle at top right, #142038 0%, var(--bg) 55%);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 24px 20px 48px;
+    }
+
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-mark {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #1c69d4, #0ea5e9);
+      display: grid;
+      place-items: center;
+      font-weight: 800;
+      font-size: 14px;
+      letter-spacing: 0.5px;
+      box-shadow: 0 6px 20px rgba(28, 105, 212, 0.35);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 1.35rem;
+      font-weight: 700;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 0.85rem;
+      margin-top: 2px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      border: 1px solid var(--border);
+      background: var(--panel);
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--muted);
+    }
+    .dot.ok { background: var(--ok); box-shadow: 0 0 8px var(--ok); }
+    .dot.warn { background: var(--warn); box-shadow: 0 0 8px var(--warn); }
+    .dot.danger { background: var(--danger); }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px;
+    }
+
+    .config-bar {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 12px;
+      align-items: end;
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    input[type="text"], input[type="search"] {
+      width: 100%;
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 8px;
+      padding: 9px 12px;
+      font-size: 0.9rem;
+      outline: none;
+    }
+    input:focus {
+      border-color: var(--accent-glow);
+    }
+
+    .secret-wrap {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+    .secret-wrap input {
+      flex: 1;
+      min-width: 0;
+    }
+    .blurred {
+      filter: blur(5px);
+      transition: filter 0.15s ease;
+      user-select: none;
+    }
+    .toggle-vis-btn {
+      padding: 9px 10px;
+      font-size: 0.78rem;
+      white-space: nowrap;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    button, .file-btn {
+      background: var(--panel-2);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 9px 14px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    button:hover, .file-btn:hover {
+      border-color: var(--accent-glow);
+      background: #1e2940;
+    }
+
+    button.primary {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+    button.primary:hover {
+      background: #2575e6;
+    }
+
+    .alert {
+      display: none;
+      padding: 12px 16px;
+      border-radius: 10px;
+      margin-bottom: 18px;
+      font-size: 0.88rem;
+      border: 1px solid rgba(245, 158, 11, 0.4);
+      background: rgba(245, 158, 11, 0.12);
+      color: #fde68a;
+    }
+    .alert.error {
+      border-color: rgba(239, 68, 68, 0.45);
+      background: rgba(239, 68, 68, 0.12);
+      color: #fecaca;
+    }
+    .alert.show { display: block; }
+
+    .grid-main {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 18px;
+      margin-bottom: 20px;
+    }
+
+    @media (max-width: 900px) {
+      .grid-main { grid-template-columns: 1fr; }
+    }
+
+    .gauge-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+
+    .gauge-svg {
+      width: 210px;
+      height: 150px;
+    }
+
+    .gauge-val {
+      font-size: 2rem;
+      font-weight: 800;
+      margin-top: -18px;
+    }
+    .gauge-sub {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin-top: 4px;
+    }
+
+    .reserve-pill {
+      margin-top: 10px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      display: none;
+    }
+    .reserve-pill.show {
+      display: inline-block;
+      background: rgba(239, 68, 68, 0.18);
+      color: #fca5a5;
+      border: 1px solid rgba(239, 68, 68, 0.45);
+    }
+
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 14px;
+    }
+
+    .kpi {
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 16px;
+    }
+
+    .kpi-title {
+      font-size: 0.75rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .kpi-value {
+      font-size: 1.45rem;
+      font-weight: 700;
+      margin-top: 6px;
+    }
+
+    .kpi-meta {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    .kpi-wide {
+      grid-column: 1 / -1;
+    }
+
+    .cbs-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .cbs-item {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.82rem;
+    }
+
+    .cbs-meta {
+      color: var(--muted);
+      font-size: 0.76rem;
+      margin-top: 2px;
+    }
+
+    .cbs-badge {
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      white-space: nowrap;
+      background: rgba(34, 197, 94, 0.16);
+      color: #86efac;
+      border: 1px solid rgba(34, 197, 94, 0.35);
+    }
+    .cbs-badge.warn {
+      background: rgba(245, 158, 11, 0.16);
+      color: #fde68a;
+      border-color: rgba(245, 158, 11, 0.35);
+    }
+    .cbs-badge.danger {
+      background: rgba(239, 68, 68, 0.16);
+      color: #fca5a5;
+      border-color: rgba(239, 68, 68, 0.35);
+    }
+
+    .tires-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 8px;
+      font-size: 0.85rem;
+    }
+
+    .tire-box {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 6px 10px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .catalog-header {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .chip {
+      padding: 6px 11px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      cursor: pointer;
+    }
+    .chip.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 6px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 14px;
+      padding-bottom: 10px;
+    }
+
+    .tab-btn {
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--muted);
+    }
+
+    .tab-btn.active {
+      background: var(--panel-2);
+      border-color: var(--border);
+      color: var(--text);
+    }
+
+    .json-pre {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      overflow-x: auto;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.82rem;
+      line-height: 1.5;
+      color: #cbd5e1;
+      margin: 0;
+      max-height: 520px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.86rem;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    th {
+      color: var(--muted);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    td.key-col {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      color: #93c5fd;
+      font-size: 0.82rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="brand">
+        <div class="brand-mark">BMW</div>
+        <div>
+          <h1>CarData Telematik &amp; Stream Dashboard</h1>
+          <div class="subtitle" id="lastUpdated">Bereit</div>
+        </div>
+      </div>
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <span class="badge"><span class="dot" id="modeDot"></span><span id="modeLabel">Initialisiere...</span></span>
+        <span class="badge"><span class="dot" id="tokenDot"></span><span id="tokenLabel">Token-Status...</span></span>
+      </div>
+    </header>
+
+    <div class="card config-bar">
+      <div>
+        <label for="vinInput">Fahrgestellnummer (VIN)</label>
+        <div class="secret-wrap">
+          <input type="text" id="vinInput" class="blurred" placeholder="WBA..." maxlength="17" />
+          <button type="button" class="toggle-vis-btn" data-target="vinInput">Anzeigen</button>
+        </div>
+      </div>
+      <div>
+        <label for="clientIdInput">Client-ID (aus secret.cfg)</label>
+        <div class="secret-wrap">
+          <input type="text" id="clientIdInput" class="blurred" readonly />
+          <button type="button" class="toggle-vis-btn" data-target="clientIdInput">Anzeigen</button>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="primary" id="btnLive">Live-Daten abrufen</button>
+        <button id="btnDemo">Demo laden</button>
+        <label class="file-btn" for="jsonFileInput" style="margin:0; text-transform:none; letter-spacing:0; color:var(--text);">
+          JSON importieren
+          <input type="file" id="jsonFileInput" accept=".json,application/json" style="display:none;" />
+        </label>
+        <button id="btnExport">JSON exportieren</button>
+      </div>
+    </div>
+
+    <div class="alert" id="alertBox"></div>
+
+    <div class="grid-main">
+      <div class="card" style="display:flex; flex-direction:column; gap:10px;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <label style="margin:0;">Position (GPS)</label>
+          <span class="subtitle" id="kpiHeading" style="margin:0;">Richtung: --</span>
+        </div>
+        <div style="position:relative; width:100%; height:190px; border-radius:10px; overflow:hidden; border:1px solid var(--border); background:var(--panel-2);">
+          <iframe id="mapFrame" title="Fahrzeugposition" style="width:100%; height:100%; border:0; display:none;" loading="lazy"></iframe>
+          <div id="mapPlaceholder" style="width:100%; height:100%; display:grid; place-items:center; color:var(--muted); font-size:0.85rem;">Keine GPS-Daten</div>
+        </div>
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
+          <span id="kpiPos" style="font-size:0.85rem; color:var(--text); font-family:ui-monospace,monospace;">--</span>
+          <a id="kpiPosLink" href="#" target="_blank" rel="noopener" style="color:#60a5fa; font-size:0.82rem; display:none;">Auf Karte öffnen</a>
+        </div>
+      </div>
+
+      <div class="kpi-grid">
+        <div class="kpi">
+          <div class="kpi-title">Tankfüllstand</div>
+          <div class="kpi-value" id="fuelPct">-- %</div>
+          <div class="kpi-meta" id="fuelLiters">-- Liter</div>
+          <div style="margin-top:8px; height:8px; border-radius:999px; background:var(--panel); overflow:hidden; border:1px solid var(--border);">
+            <div id="fuelBar" style="height:100%; width:0%; background:#1c69d4; transition:width 0.3s ease;"></div>
+          </div>
+          <div class="reserve-pill" id="reservePill">Reserve-Warnung</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-title">Restreichweite</div>
+          <div class="kpi-value" id="kpiRange">-- km</div>
+          <div class="kpi-meta" id="kpiConsumption">Verbrauch: --</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-title">Gesamtkilometerstand</div>
+          <div class="kpi-value" id="kpiOdo">-- km</div>
+          <div class="kpi-meta" id="kpiSpeed">Ø Geschw.: --</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-title">Türen &amp; Fenster</div>
+          <div class="kpi-value" id="kpiLock">--</div>
+          <div class="kpi-meta" id="kpiDoors">Türen: --</div>
+          <div class="kpi-meta" id="kpiWindows">Fenster: --</div>
+        </div>
+        <div class="kpi kpi-wide">
+          <div style="display:flex; justify-content:space-between; align-items:baseline; gap:12px; flex-wrap:wrap;">
+            <div>
+              <div class="kpi-title">Service-Status (CBS)</div>
+              <div class="kpi-value" id="kpiService">--</div>
+            </div>
+            <div class="kpi-meta" id="kpiCbs">CBS: --</div>
+          </div>
+          <div class="cbs-grid" id="cbsList"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="tabs" id="catalogTabs">
+        <button class="tab-btn active" data-tab="table">Tabelle</button>
+        <button class="tab-btn" data-tab="json">Alle JSON-Werte</button>
+      </div>
+
+      <div id="tabTable">
+        <div class="catalog-header">
+          <div>
+            <h2 style="margin:0; font-size:1.05rem;">Telematik-Katalog</h2>
+            <div class="subtitle" id="catalogCount">0 Einträge</div>
+          </div>
+          <div class="filters" id="categoryFilters">
+            <button class="chip active" data-cat="all">Alle</button>
+            <button class="chip" data-cat="fuel">Antrieb &amp; Tank</button>
+            <button class="chip" data-cat="doors">Fahrzeug &amp; Türen</button>
+            <button class="chip" data-cat="chassis">Fahrwerk &amp; Reifen</button>
+            <button class="chip" data-cat="other">Sonstiges</button>
+          </div>
+          <div style="min-width:240px;">
+            <input type="search" id="searchInput" placeholder="Key oder Wert suchen..." />
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Telematik-Key</th>
+                <th>Wert</th>
+                <th>Einheit</th>
+                <th>Zeitstempel</th>
+              </tr>
+            </thead>
+            <tbody id="catalogBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="tabJson" style="display:none;">
+        <div class="catalog-header">
+          <div>
+            <h2 style="margin:0; font-size:1.05rem;">Alle JSON-Werte (Rohdaten)</h2>
+            <div class="subtitle" id="jsonMeta">Vollständiger API-Payload</div>
+          </div>
+          <button id="btnCopyJson">JSON kopieren</button>
+        </div>
+        <pre class="json-pre" id="jsonRawPre">{}</pre>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentPayload = null;
+    let activeCategory = "all";
+
+    const $ = (id) => document.getElementById(id);
+
+    function showAlert(msg, isError = false) {
+      const box = $("alertBox");
+      if (!msg) {
+        box.className = "alert";
+        box.textContent = "";
+        return;
+      }
+      box.textContent = msg;
+      box.className = isError ? "alert error show" : "alert show";
+    }
+
+    function readEntry(data, ...keys) {
+      for (const k of keys) {
+        if (data && data[k] !== undefined && data[k] !== null) {
+          const entry = data[k];
+          if (typeof entry === "object" && "value" in entry) {
+            if (entry.value === null || entry.value === undefined || entry.value === "") continue;
+            return entry;
+          }
+          return { value: entry, unit: "", timestamp: null };
+        }
+      }
+      return null;
+    }
+
+    function formatTs(ts) {
+      if (!ts) return "–";
+      const d = new Date(ts);
+      return Number.isNaN(d.getTime()) ? String(ts) : d.toLocaleString("de-DE");
+    }
+
+    function categorize(key) {
+      if (key.includes("fuel") || key.includes("drivetrain") || key.includes("Range")) return "fuel";
+      if (key.includes("door") || key.includes("trunk") || key.includes("cabin") || key.includes("body")) return "doors";
+      if (key.includes("tire") || key.includes("chassis") || key.includes("wheel")) return "chassis";
+      return "other";
+    }
+
+    function renderDashboard(payload, sourceLabel) {
+      currentPayload = payload;
+      const td = payload.telematicData || payload || {};
+      if (payload.vin) $("vinInput").value = payload.vin;
+
+      $("modeDot").className = payload.isDemo ? "dot warn" : "dot ok";
+      $("modeLabel").textContent = sourceLabel;
+      const savedInfo = payload.savedFile ? " · Daten als JSON gespeichert" : "";
+      $("lastUpdated").textContent = `Stand: ${formatTs(payload.fetchedAt || new Date().toISOString())}${savedInfo}`;
+      $("jsonRawPre").textContent = JSON.stringify(payload, null, 2);
+      $("jsonMeta").textContent = payload.savedFile
+        ? "Daten als JSON gespeichert"
+        : "Vollständiger API-Payload";
+
+      // Tankfüllstand
+      const pctEntry = readEntry(td, "vehicle.drivetrain.fuelSystem.level", "fuelLevel");
+      const litEntry = readEntry(td, "vehicle.drivetrain.fuelSystem.remainingFuel", "remainingFuel");
+      const capEntry = readEntry(td, "vehicle.drivetrain.fuelSystem.tankCapacity");
+
+      let pct = pctEntry ? Number(pctEntry.value) : null;
+      const lit = litEntry ? Number(litEntry.value) : null;
+      const cap = capEntry ? Number(capEntry.value) : 60;
+      if (pct === null && lit !== null && cap > 0) {
+        pct = Math.round((lit / cap) * 100);
+      }
+
+      const clampedPct = pct !== null ? Math.max(0, Math.min(100, pct)) : 0;
+      const isReserve = (pct !== null && pct < 15) || (lit !== null && lit < 8);
+      const bar = $("fuelBar");
+      bar.style.width = `${clampedPct}%`;
+      bar.style.background = isReserve ? "#ef4444" : "#1c69d4";
+
+      $("fuelPct").textContent = pct !== null ? `${pct} %` : "-- %";
+      $("fuelLiters").textContent = lit !== null ? `${lit.toFixed(1)} Liter${cap ? ` / ${cap} l` : ""}` : "-- Liter";
+      $("reservePill").className = isReserve ? "reserve-pill show" : "reserve-pill";
+
+      // KPIs
+      const range = readEntry(td, "vehicle.drivetrain.totalRemainingRange", "remainingRangeFuel");
+      $("kpiRange").textContent = range ? `${range.value} ${range.unit || "km"}` : "-- km";
+
+      const cons = readEntry(td, "vehicle.drivetrain.fuelSystem.averageConsumption");
+      $("kpiConsumption").textContent = cons ? `Ø Verbrauch: ${cons.value} ${cons.unit || "l/100km"}` : "Ø Verbrauch: --";
+
+      const odo = readEntry(td, "vehicle.vehicle.travelledDistance", "mileage");
+      $("kpiOdo").textContent = odo ? `${Number(odo.value).toLocaleString("de-DE")} ${odo.unit || "km"}` : "-- km";
+
+      const speed = readEntry(td, "vehicle.vehicle.averageSpeed");
+      $("kpiSpeed").textContent = speed ? `Ø Geschw.: ${speed.value} ${speed.unit || "km/h"}` : "Ø Geschw.: --";
+
+      const lock = readEntry(td, "vehicle.cabin.door.status", "doorLockState");
+      const lockMap = { SECURED: "Verriegelt", LOCKED: "Verriegelt", UNLOCKED: "Entriegelt" };
+      $("kpiLock").textContent = lock ? (lockMap[lock.value] || String(lock.value)) : "--";
+
+      const doorKeys = [
+        "vehicle.cabin.door.row1.driver.isOpen",
+        "vehicle.cabin.door.row1.passenger.isOpen",
+        "vehicle.cabin.door.row2.driver.isOpen",
+        "vehicle.cabin.door.row2.passenger.isOpen",
+        "vehicle.body.trunk.isOpen",
+        "vehicle.body.hood.isOpen"
+      ];
+      const isOpenVal = (v) => v === true || v === "OPEN" || v === "INTERMEDIATE";
+      const knownDoors = doorKeys.filter((k) => td[k]?.value !== null && td[k]?.value !== undefined);
+      const openDoors = knownDoors.filter((k) => isOpenVal(td[k]?.value)).length;
+      $("kpiDoors").textContent = knownDoors.length === 0
+        ? "Türen: --"
+        : (openDoors > 0 ? `Türen: ${openDoors} geöffnet` : "Türen: Alle geschlossen");
+
+      const winKeys = [
+        "vehicle.cabin.window.row1.driver.status",
+        "vehicle.cabin.window.row1.passenger.status",
+        "vehicle.cabin.window.row2.driver.status",
+        "vehicle.cabin.window.row2.passenger.status"
+      ];
+      const knownWins = winKeys.filter((k) => td[k]?.value !== null && td[k]?.value !== undefined);
+      const openWins = knownWins.filter((k) => isOpenVal(td[k]?.value)).length;
+      $("kpiWindows").textContent = knownWins.length === 0
+        ? "Fenster: --"
+        : (openWins > 0 ? `Fenster: ${openWins} geöffnet` : "Fenster: Alle geschlossen");
+      if (!lock && knownDoors.length > 0) {
+        $("kpiLock").textContent = openDoors === 0 ? "Geschlossen" : `${openDoors} offen`;
+      }
+
+      const lat = readEntry(td, "vehicle.cabin.infotainment.navigation.currentLocation.latitude");
+      const lon = readEntry(td, "vehicle.cabin.infotainment.navigation.currentLocation.longitude");
+      const hdg = readEntry(td, "vehicle.cabin.infotainment.navigation.currentLocation.heading");
+      if (lat && lon) {
+        const latNum = Number(lat.value);
+        const lonNum = Number(lon.value);
+        const d = 0.005;
+        const bbox = `${lonNum - d},${latNum - d},${lonNum + d},${latNum + d}`;
+        $("kpiPos").textContent = `${latNum.toFixed(5)}, ${lonNum.toFixed(5)}`;
+        $("kpiPosLink").href = `https://www.openstreetmap.org/?mlat=${latNum}&mlon=${lonNum}#map=16/${latNum}/${lonNum}`;
+        $("kpiPosLink").style.display = "inline";
+        $("mapFrame").src = `https://www.openstreetmap.org/export/embed.html?bbox=${encodeURIComponent(bbox)}&layer=mapnik&marker=${latNum},${lonNum}`;
+        $("mapFrame").style.display = "block";
+        $("mapPlaceholder").style.display = "none";
+      } else {
+        $("kpiPos").textContent = "--";
+        $("kpiPosLink").style.display = "none";
+        $("mapFrame").style.display = "none";
+        $("mapFrame").src = "about:blank";
+        $("mapPlaceholder").style.display = "grid";
+      }
+      $("kpiHeading").textContent = hdg ? `Richtung: ${hdg.value}°` : "Richtung: --";
+
+      const svcDist = readEntry(td, "vehicle.status.serviceDistance.next");
+      const cbs = readEntry(td, "vehicle.status.conditionBasedServices");
+      $("kpiService").textContent = svcDist ? `Nächster Service in ${Number(svcDist.value).toLocaleString("de-DE")} ${svcDist.unit || "km"}` : "--";
+      const cbsList = $("cbsList");
+      cbsList.innerHTML = "";
+      const cbsTitleMap = {
+        "Engine oil": "Motoröl",
+        "Brake fluid": "Bremsflüssigkeit",
+        "Statutory vehicle inspection": "Hauptuntersuchung (HU)",
+        "Vehicle check": "Fahrzeugcheck"
+      };
+      if (cbs) {
+        try {
+          const items = typeof cbs.value === "string" ? JSON.parse(cbs.value) : cbs.value;
+          if (Array.isArray(items)) {
+            const okCount = items.filter((i) => i.status === "OK").length;
+            $("kpiCbs").textContent = `${okCount}/${items.length} Einträge OK`;
+            for (const item of items) {
+              const title = cbsTitleMap[item.title] || item.title || "Service";
+              const parts = [];
+              if (item.date && item.date !== "-") parts.push(`Fällig: ${item.date}`);
+              if (item.unitOfLengthRemaining && item.unitOfLengthRemaining !== "-") {
+                parts.push(`${Number(item.unitOfLengthRemaining).toLocaleString("de-DE")} km`);
+              }
+              const badgeCls = item.status === "OK" ? "cbs-badge" : (item.status === "OVERDUE" ? "cbs-badge danger" : "cbs-badge warn");
+              const row = document.createElement("div");
+              row.className = "cbs-item";
+              row.innerHTML = `<div><div><strong></strong></div><div class="cbs-meta"></div></div><span class="${badgeCls}"></span>`;
+              row.querySelector("strong").textContent = title;
+              row.querySelector(".cbs-meta").textContent = parts.join(" · ") || "Keine Angabe";
+              row.querySelector("span").textContent = item.status || "–";
+              cbsList.appendChild(row);
+            }
+          } else {
+            $("kpiCbs").textContent = String(cbs.value);
+          }
+        } catch {
+          $("kpiCbs").textContent = String(cbs.value);
+        }
+      } else {
+        $("kpiCbs").textContent = "CBS: Keine Meldung";
+      }
+
+      renderCatalog();
+    }
+
+    function renderCatalog() {
+      const td = currentPayload?.telematicData || currentPayload || {};
+      const query = $("searchInput").value.trim().toLowerCase();
+      const entries = Object.entries(td).filter(([key, val]) => {
+        if (activeCategory !== "all" && categorize(key) !== activeCategory) return false;
+        if (!query) return true;
+        const valStr = typeof val === "object" && val !== null ? JSON.stringify(val) : String(val);
+        return key.toLowerCase().includes(query) || valStr.toLowerCase().includes(query);
+      });
+
+      $("catalogCount").textContent = `${entries.length} Einträge`;
+      const tbody = $("catalogBody");
+      tbody.innerHTML = "";
+
+      for (const [key, raw] of entries) {
+        const isObj = typeof raw === "object" && raw !== null && "value" in raw;
+        const val = isObj ? raw.value : raw;
+        const unit = isObj ? (raw.unit || "–") : "–";
+        const ts = isObj ? formatTs(raw.timestamp) : "–";
+
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td class="key-col"></td>
+          <td></td>
+          <td></td>
+          <td></td>
+        `;
+        tr.children[0].textContent = key;
+        tr.children[1].textContent = (val === null || val === undefined) ? "–" : (typeof val === "object" ? JSON.stringify(val) : String(val));
+        tr.children[2].textContent = unit;
+        tr.children[3].textContent = ts;
+        tbody.appendChild(tr);
+      }
+    }
+
+    async function loadConfigAndInit() {
+      try {
+        const res = await fetch("/api/config");
+        const cfg = await res.json();
+        if (cfg.vin) $("vinInput").value = cfg.vin;
+        if (cfg.clientId) $("clientIdInput").value = cfg.clientId;
+
+        if (cfg.tokenValid) {
+          $("tokenDot").className = "dot ok";
+          $("tokenLabel").textContent = "Token gültig";
+        } else if (cfg.hasToken) {
+          $("tokenDot").className = "dot warn";
+          $("tokenLabel").textContent = "Token abgelaufen (Auto-Refresh)";
+        } else {
+          $("tokenDot").className = "dot danger";
+          $("tokenLabel").textContent = "Kein Token (npm run auth)";
+        }
+      } catch (err) {
+        showAlert("Konfiguration konnte nicht geladen werden: " + err.message, true);
+      }
+      await loadDemo();
+    }
+
+    async function loadDemo() {
+      showAlert("");
+      const vin = $("vinInput").value.trim();
+      const res = await fetch(`/api/demo${vin ? `?vin=${encodeURIComponent(vin)}` : ""}`);
+      const data = await res.json();
+      renderDashboard(data, "Demo-Modus (BMW F31)");
+    }
+
+    async function loadLive() {
+      showAlert("");
+      const vin = $("vinInput").value.trim();
+      try {
+        const res = await fetch(`/api/telematic${vin ? `?vin=${encodeURIComponent(vin)}` : ""}`);
+        const data = await res.json();
+        if (!res.ok) {
+          showAlert(data.error || `HTTP ${res.status}`, true);
+          return;
+        }
+        renderDashboard(data, "Live-Daten (BMW CarData)");
+      } catch (err) {
+        showAlert("Fehler beim Abrufen der Live-Daten: " + err.message, true);
+      }
+    }
+
+    $("btnDemo").addEventListener("click", loadDemo);
+    $("btnLive").addEventListener("click", loadLive);
+    $("searchInput").addEventListener("input", renderCatalog);
+
+    document.querySelector(".config-bar").addEventListener("click", (e) => {
+      const btn = e.target.closest(".toggle-vis-btn");
+      if (!btn) return;
+      const input = $(btn.dataset.target);
+      if (!input) return;
+      const isBlurred = input.classList.toggle("blurred");
+      btn.textContent = isBlurred ? "Anzeigen" : "Verbergen";
+    });
+
+    $("catalogTabs").addEventListener("click", (e) => {
+      const btn = e.target.closest(".tab-btn");
+      if (!btn) return;
+      document.querySelectorAll(".tab-btn").forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      const isJson = btn.dataset.tab === "json";
+      $("tabTable").style.display = isJson ? "none" : "block";
+      $("tabJson").style.display = isJson ? "block" : "none";
+    });
+
+    $("btnCopyJson").addEventListener("click", async () => {
+      if (!currentPayload) return;
+      await navigator.clipboard.writeText(JSON.stringify(currentPayload, null, 2));
+      $("btnCopyJson").textContent = "Kopiert!";
+      setTimeout(() => { $("btnCopyJson").textContent = "JSON kopieren"; }, 1500);
+    });
+
+    $("categoryFilters").addEventListener("click", (e) => {
+      const btn = e.target.closest(".chip");
+      if (!btn) return;
+      document.querySelectorAll(".chip").forEach((c) => c.classList.remove("active"));
+      btn.classList.add("active");
+      activeCategory = btn.dataset.cat;
+      renderCatalog();
+    });
+
+    $("jsonFileInput").addEventListener("change", async (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      try {
+        const parsed = JSON.parse(await file.text());
+        const vinMatch = file.name.match(/[A-HJ-NPR-Z0-9]{17}/i);
+        const telematicData = parsed.telematicData ?? parsed;
+        renderDashboard({
+          vin: parsed.vin || (vinMatch ? vinMatch[0].toUpperCase() : $("vinInput").value),
+          fetchedAt: parsed.fetchedAt || new Date().toISOString(),
+          isDemo: false,
+          telematicData
+        }, `Datei: ${file.name}`);
+        showAlert("");
+      } catch (err) {
+        showAlert("Ungültige JSON-Datei: " + err.message, true);
+      }
+    });
+
+    $("btnExport").addEventListener("click", () => {
+      if (!currentPayload) return;
+      const vin = $("vinInput").value.trim() || "bmw-cardata";
+      const blob = new Blob([JSON.stringify(currentPayload, null, 2)], { type: "application/json" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `${vin}_telematic.json`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    });
+
+    loadConfigAndInit();
+  </script>
+</body>
+</html>

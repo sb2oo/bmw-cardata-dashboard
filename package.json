@@ -1,0 +1,12 @@
+{
+  "name": "bmw-cardata-dashboard",
+  "version": "1.0.0",
+  "description": "BMW CarData Telematik & Stream Dashboard",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "auth": "node bmw-auth.js",
+    "fetch": "node bmw_show_api_data.js",
+    "start": "node server.js"
+  }
+}
